@@ -1,0 +1,6 @@
+126 626              ! Size of the model
+50. 50.              ! Grid spscing in meter
+10                   ! Number of iteration
+3250. 15000.           ! Position of the source (z,x) in meter
+fvp_bp.bin.h50          ! name of the vertical(zero) velocity model
+1 1500.              ! if zero, set velocity to the given value

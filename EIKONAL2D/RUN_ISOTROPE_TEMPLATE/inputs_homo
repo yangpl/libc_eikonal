@@ -1,0 +1,6 @@
+501 501              ! Size of the model
+1.25 1.25            ! Grid spscing in meter
+4                   ! Number of iteration
+310. 310.            ! Position of the source (z,x) in meter
+homo_1500.bin.h50    ! name of the vertical(zero) velocity model
+0 1500.              ! if zero, set velocity to the given value
