@@ -1,7 +1,7 @@
 #include "cstd.h"
 #include "eikonal.h"
 
-#define HUGE 1000.
+#define HUGE 1e10
 
 void compute_ray_parameters(float*** t, float*** dtdx, float*** dtdy, float*** dtdz, float h1, float h2, float h3, int n1, int n2, int n3)
 {
@@ -61,7 +61,8 @@ void find_root_polynomial2(float q1,float q0,float* root,int* nd)
 
 
 void find_upwind_stencil(eikonal_t *eik, int xc, int yc, int zc, float* T0x, float* T0y, float* T0z,
-			 float* taux, float* tauy, float* tauz, int* sx, int* sy, int* sz){
+			 float* taux, float* tauy, float* tauz, int* sx, int* sy, int* sz)
+{
   if(xc == 0){
     *T0x = eik->T0[xc+1][yc][zc];
     *taux = eik->tau[xc+1][yc][zc];
@@ -121,7 +122,6 @@ void find_upwind_stencil(eikonal_t *eik, int xc, int yc, int zc, float* T0x, flo
       *sz = -1;
     }
   }
-
 
 }
 
@@ -283,7 +283,7 @@ void stencil_solver_3D(eikonal_t *eik, int xc, int yc, int zc)
   eik->tau[xc][yc][zc] = fmin(eik->tau[xc][yc][zc], tauc);
 }
 
-void run_fast_sweep(eikonal_t *eik)
+void fast_sweeping(eikonal_t *eik)
 {
   float maxval;
   int i, j, k;
@@ -421,7 +421,7 @@ void eikonal_solver(eikonal_t *eik)
       for(j=0; j<2; j++)
 	for(k=0; k<2; k++)
 	  eik->tau[eik->shotx[i]][eik->shoty[j]][eik->shotz[k]] = 1.;
-    run_fast_sweep(eik);
+    fast_sweeping(eik);
 
     // calculate rhs && T
     compute_ray_parameters(eik->tau, eik->px, eik->py, eik->pz, eik->h1, eik->h2, eik->h3, eik->n1, eik->n2, eik->n3);
