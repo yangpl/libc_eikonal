@@ -41,7 +41,7 @@ void compute_ray_parameters(float*** t, float*** dtdx, float*** dtdy, float*** d
 //solving 2nd order polynomial equation: x*x+q1*x+q0=0
 //root:only record the real root
 //nd:the number of real root
-void Polynomial2rootsolver(float q1,float q0,float* root,int* nd)
+void find_root_polynomial2(float q1,float q0,float* root,int* nd)
 {
   float delta = q1*q1-4*q0;
   root[0] = 0;
@@ -158,7 +158,7 @@ float trisolver_xy(eikonal_t *eik, float Vnmoc, float V0c, float etac, float T0c
   float b = -2*Vnmoc2*(1+2*etac)*taux*( T0c2/(eik->h1*eik->h1) +sx*T0c*px0c/eik->h1 )
     -2*Vnmoc2*(1+2*etac)*tauy*( T0c2/(eik->h2*eik->h2) +sy*T0c*py0c/eik->h2 );
   float c = Vnmoc2*(1+2*etac)*taux*taux*T0c2/(eik->h1*eik->h1) + Vnmoc2*(1+2*etac)*tauy*tauy*T0c2/(eik->h2*eik->h2) - rhsc;
-  Polynomial2rootsolver(b/a, c/a, root, &nd);
+  find_root_polynomial2(b/a, c/a, root, &nd);
   for(int i=0; i<nd; i++){
     if(is_Causal_root_2D(root[i], taux, tauy, eik->h1, eik->h2, px0c, py0c, sx, sy, T0c)){
       flag = 0;
@@ -187,7 +187,7 @@ float trisolver_xz(eikonal_t *eik, float Vnmoc, float V0c, float etac, float T0c
   float b = -2*Vnmoc2*(1+2*etac)*taux*( T0c2/(eik->h1*eik->h1) +sx*T0c*px0c/eik->h1 )
     -2*V0c2*tauz*( T0c2/(eik->h3*eik->h3) + sz*T0c*pz0c/eik->h3 );
   float c = Vnmoc2*(1+2*etac)*taux*taux*T0c2/(eik->h1*eik->h1) + V0c2*tauz*tauz*T0c2/(eik->h3*eik->h3) - rhsc;
-  Polynomial2rootsolver(b/a, c/a, root, &nd);
+  find_root_polynomial2(b/a, c/a, root, &nd);
   for(int i=0; i<nd; i++){
     if(is_Causal_root_2D(root[i], taux, tauz, eik->h1, eik->h3, px0c, pz0c, sx, sz, T0c)){
       flag = 0;
@@ -216,7 +216,7 @@ float trisolver_yz(eikonal_t *eik, float Vnmoc, float V0c, float etac, float T0c
   float b = -2*Vnmoc2*(1+2*etac)*tauy*( T0c2/(eik->h2*eik->h2) +sy*T0c*py0c/eik->h2 )
     -2*V0c2*tauz*( T0c2/(eik->h3*eik->h3) + sz*T0c*pz0c/eik->h3 );
   float c = Vnmoc2*(1+2*etac)*tauy*tauy*T0c2/(eik->h2*eik->h2) + V0c2*tauz*tauz*T0c2/(eik->h3*eik->h3) - rhsc;
-  Polynomial2rootsolver(b/a, c/a, root, &nd);
+  find_root_polynomial2(b/a, c/a, root, &nd);
   for(int i=0; i<nd; i++){
     if(is_Causal_root_2D(root[i], tauy, tauz, eik->h2, eik->h3, py0c, pz0c, sy, sz, T0c)){
       flag = 0;
@@ -264,7 +264,7 @@ void stencil_solver_3D(eikonal_t *eik, int xc, int yc, int zc)
       -2*V0c2*tauz*( T0c2/(eik->h3*eik->h3) + sz*T0c*pz0c/eik->h3 );
     float c = Vnmoc2*(1+2*etac)*taux*taux*T0c2/(eik->h1*eik->h1) + Vnmoc2*(1+2*etac)*tauy*tauy*T0c2/(eik->h2*eik->h2)
       + V0c2*tauz*tauz*T0c2/(eik->h3*eik->h3) - rhsc;
-    Polynomial2rootsolver(b/a, c/a, root, &nd);
+    find_root_polynomial2(b/a, c/a, root, &nd);
     for(int i=0; i<nd; i++){
       if(is_Causal_root_3D(root[i], taux, tauy, tauz, eik->h1, eik->h2, eik->h3, px0c, py0c, pz0c, sx, sy, sz, T0c)){
 	tauc = fmin(tauc,root[i]);
