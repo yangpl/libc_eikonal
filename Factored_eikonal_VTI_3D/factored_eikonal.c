@@ -295,10 +295,7 @@ void run_fast_sweep(eikonal_t *eik)
   float*** arr = alloc3float(n3,n2,n1);
   for(int iter=0; iter<eik->niter; iter++){
     printf("# %d-th inner loop\n",iter+1);
-    for(i=0; i<n1; i++)
-      for(j=0; j<n2; j++)
-	for(k=0; k<n3; k++)
-	  arr[i][j][k] = eik->tau[i][j][k];
+    memcpy(&arr[0][0][0], &eik->tau[0][0][0], n1*n2*n3*sizeof(float));
     for(i=0; i<n1; i++)
       for(j=0; j<n2; j++)
 	for(k=0; k<n3; k++)
@@ -388,10 +385,7 @@ void eikonal_solver(eikonal_t *eik)
 
   for(int loop=0; loop<eik->nfpi; loop++){
     printf("------# %d-th outer loop----\n", loop+1);
-    for(i=0; i<n1; i++)
-      for(j=0; j<n2; j++)
-	for(k=0; k<n3; k++)
-	  arr[i][j][k] = eik->T[i][j][k];
+    memcpy(&arr[0][0][0], &eik->T[0][0][0], n1*n2*n3*sizeof(float));
     // calculate T0 && grad((T0)
     float Vnmos = eik->Vnmo[eik->shotx[0]][eik->shoty[0]][eik->shotz[0]];
     float V0s = eik->V0[eik->shotx[0]][eik->shoty[0]][eik->shotz[0]];
