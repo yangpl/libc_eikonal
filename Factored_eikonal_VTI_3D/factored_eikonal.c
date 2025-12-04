@@ -11,7 +11,7 @@ float x_source, y_source, z_source;
 int niter, nfpi;
 float epsilon;
 
-void derivative_3D(float*** t, float*** dtdx, float*** dtdy, float*** dtdz, float h1, float h2, float h3, int n1, int n2, int n3)
+void compute_ray_parameters(float*** t, float*** dtdx, float*** dtdy, float*** dtdz, float h1, float h2, float h3, int n1, int n2, int n3)
 {
   int i, j, k;
   
@@ -434,7 +434,7 @@ void eikonal_solver(float*** Vnmo, float*** V0, float*** eta, float*** T)
     run_fast_sweep(Vnmo, V0, eta, tau, T0, px0, py0, pz0, rhs, shotx, shoty, shotz);
 
     // calculate rhs && T
-    derivative_3D(tau, px, py, pz, h1, h2, h3, n1, n2, n3);
+    compute_ray_parameters(tau, px, py, pz, h1, h2, h3, n1, n2, n3);
     for(i=0; i<n1; i++){
       for(j=0; j<n2; j++){
 	for(k=0; k<n3; k++){
