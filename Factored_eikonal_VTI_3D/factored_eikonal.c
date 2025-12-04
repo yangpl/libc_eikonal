@@ -11,485 +11,463 @@ float x_source, y_source, z_source;
 int niter, nfpi;
 float epsilon;
 
-void derivative_3D(float*** t, float*** dtdx, float*** dtdy, float*** dtdz, float h1, float h2, float h3, int n1, int n2, int n3){
-	for(int i=0; i<n1; i++){
-		for(int j=0; j<n2; j++){
-			for(int k=1; k<n3-1; k++){
-				dtdz[i][j][k] = (t[i][j][k+1]-t[i][j][k-1])/(2*h3);
-			}
-			dtdz[i][j][0] = (-3*t[i][j][0]+4*t[i][j][1]-t[i][j][2])/(2*h3);
-			dtdz[i][j][n3-1] = (3*t[i][j][n3-3]-4*t[i][j][n3-2]+t[i][j][n3-1])/(2*h3);
-		}
-	}
+void derivative_3D(float*** t, float*** dtdx, float*** dtdy, float*** dtdz, float h1, float h2, float h3, int n1, int n2, int n3)
+{
+  int i, j, k;
+  
+  for(i=0; i<n1; i++){
+    for(j=0; j<n2; j++){
+      for(k=1; k<n3-1; k++){
+	dtdz[i][j][k] = (t[i][j][k+1]-t[i][j][k-1])/(2*h3);
+      }
+      dtdz[i][j][0] = (-3*t[i][j][0]+4*t[i][j][1]-t[i][j][2])/(2*h3);
+      dtdz[i][j][n3-1] = (3*t[i][j][n3-3]-4*t[i][j][n3-2]+t[i][j][n3-1])/(2*h3);
+    }
+  }
 
-	for(int i=0; i<n1; i++){
-		for(int k=0; k<n3; k++){
-			for(int j=1; j<n2-1; j++){
-				dtdy[i][j][k] = (t[i][j+1][k]-t[i][j-1][k])/(2*h2);
-			}
-			dtdy[i][0][k] = (-3*t[i][0][k]+4*t[i][1][k]-t[i][2][k])/(2*h2);
-			dtdy[i][n2-1][k] = (3*t[i][n2-3][k]-4*t[i][n2-2][k]+t[i][n2-1][k])/(2*h2);
-		}
-	}
+  for(i=0; i<n1; i++){
+    for(k=0; k<n3; k++){
+      for(j=1; j<n2-1; j++){
+	dtdy[i][j][k] = (t[i][j+1][k]-t[i][j-1][k])/(2*h2);
+      }
+      dtdy[i][0][k] = (-3*t[i][0][k]+4*t[i][1][k]-t[i][2][k])/(2*h2);
+      dtdy[i][n2-1][k] = (3*t[i][n2-3][k]-4*t[i][n2-2][k]+t[i][n2-1][k])/(2*h2);
+    }
+  }
 
-	for(int j=0; j<n2; j++){
-		for(int k=0; k<n3; k++){
-			for(int i=1; i<n1-1; i++){
-				dtdx[i][j][k] = (t[i+1][j][k]-t[i-1][j][k])/(2*h1);
-			}
-			dtdx[0][j][k] = (-3*t[0][j][k]+4*t[1][j][k]-t[2][j][k])/(2*h1);
-			dtdx[n1-1][j][k] = (3*t[n1-3][j][k]-4*t[n1-2][j][k]+t[n1-1][j][k])/(2*h1);
-		}
-	}
+  for(j=0; j<n2; j++){
+    for(k=0; k<n3; k++){
+      for(i=1; i<n1-1; i++){
+	dtdx[i][j][k] = (t[i+1][j][k]-t[i-1][j][k])/(2*h1);
+      }
+      dtdx[0][j][k] = (-3*t[0][j][k]+4*t[1][j][k]-t[2][j][k])/(2*h1);
+      dtdx[n1-1][j][k] = (3*t[n1-3][j][k]-4*t[n1-2][j][k]+t[n1-1][j][k])/(2*h1);
+    }
+  }
 }
 
-void Polynomial2rootsolver(float q1,float q0,float* root,int* nd){
-	//x*x+q1*x+q0=0
-	//root:only record the real root
-	//nd:the number of real root
-	float delta=q1*q1-4*q0;
-	root[0]=0;
-	root[1]=0;
-	if(delta>0){
-		root[0]=(-q1+sqrt(delta))/2.;
-		root[1]=(-q1-sqrt(delta))/2.;
-		*nd=2;
-	}else if(fabs(delta)<1.0e-12){
-		root[0]=-q1/2.;
-		*nd=1;
-	}else{
-	        *nd=0;
-	}
+//solving 2nd order polynomial equation: x*x+q1*x+q0=0
+//root:only record the real root
+//nd:the number of real root
+void Polynomial2rootsolver(float q1,float q0,float* root,int* nd)
+{
+  float delta = q1*q1-4*q0;
+  root[0] = 0;
+  root[1] = 0;
+  if(delta>0){
+    root[0] = (-q1+sqrt(delta))/2.;
+    root[1] = (-q1-sqrt(delta))/2.;
+    *nd = 2;
+  }else if(fabs(delta)<1.0e-12){
+    root[0] = -q1/2.;
+    *nd = 1;
+  }else{
+    *nd = 0;
+  }
 }
 
-void derivative_3D(float*** t, float*** dtdx, float*** dtdy, float*** dtdz, float h1, float h2, float h3, int n1, int n2, int n3);
 
-void find_source_grid_index(int* shotx, int* shoty, int* shotz){
-	int i = (int)(x_source/h1);
-	int j = (int)(y_source/h2);
-	int k = (int)(z_source/h3);
-
-	shotx[0] = i; shotx[1] = i+1;
-	shoty[0] = j; shoty[1] = j+1;
-	shotz[0] = k; shotz[1] = k+1;
-
-	/* if((x_source-i*h1) < h1/10.){
-		shotx[0] = i; shotx[1] = i;
-	}else if(((i+1)*h1-x_source) < h1/10.){
-		shotx[0] = i+1; shotx[1] = i+1;
-	}else{
-		shotx[0] = i; shotx[1] = i+1;
-	}
-
-	if((y_source-j*h2) < h2/10.){
-		shoty[0] = j; shoty[1] = j;
-	}else if(((j+1)*h2-y_source) < h2/10.){
-		shoty[0] = j+1; shoty[1] = j+1;
-	}else{
-		shoty[0] = j; shoty[1] = j+1;
-	}
-
-	if((z_source-k*h3) < h3/10.){
-		shotz[0] = k; shotz[1] = k;
-	}else if(((k+1)*h3-z_source) < h3/10.){
-		shotz[0] = k+1; shotz[1] = k+1;
-	}else{
-		shotz[0] = k; shotz[1] = k+1;
-	}*/
-}
-
-void init(float*** tau, int* shotx, int* shoty, int* shotz){
-	for(int i=0; i<n1; i++)
-		for(int j=0; j<n2; j++)
-			for(int k=0; k<n3; k++)
-				tau[i][j][k] = HUGE;
-	for(int i=0; i<2; i++)
-		for(int j=0; j<2; j++)
-			for(int k=0; k<2; k++)
-				tau[shotx[i]][shoty[j]][shotz[k]] = 1.;
-}
 
 void find_upwind_stencil(float*** tau, float*** T0, int xc, int yc, int zc, float* T0x, float* T0y, float* T0z,
-	       float* taux, float* tauy, float* tauz, int* sx, int* sy, int* sz){
-	if(xc == 0){
-		*T0x = T0[xc+1][yc][zc];
-		*taux = tau[xc+1][yc][zc];
-		*sx = -1;
-	}else if(xc == n1-1){
-		*T0x = T0[xc-1][yc][zc];
-		*taux = tau[xc-1][yc][zc];
-		*sx = 1;
-	}else{
-		if((tau[xc-1][yc][zc]*T0[xc-1][yc][zc]) < (tau[xc+1][yc][zc]*T0[xc+1][yc][zc])){
-			*T0x = T0[xc-1][yc][zc];
-			*taux = tau[xc-1][yc][zc];
-			*sx = 1;
-		}else{
-			*T0x = T0[xc+1][yc][zc];
-			*taux = tau[xc+1][yc][zc];
-			*sx = -1;
-		}
-	}
+			 float* taux, float* tauy, float* tauz, int* sx, int* sy, int* sz){
+  if(xc == 0){
+    *T0x = T0[xc+1][yc][zc];
+    *taux = tau[xc+1][yc][zc];
+    *sx = -1;
+  }else if(xc == n1-1){
+    *T0x = T0[xc-1][yc][zc];
+    *taux = tau[xc-1][yc][zc];
+    *sx = 1;
+  }else{
+    if((tau[xc-1][yc][zc]*T0[xc-1][yc][zc]) < (tau[xc+1][yc][zc]*T0[xc+1][yc][zc])){
+      *T0x = T0[xc-1][yc][zc];
+      *taux = tau[xc-1][yc][zc];
+      *sx = 1;
+    }else{
+      *T0x = T0[xc+1][yc][zc];
+      *taux = tau[xc+1][yc][zc];
+      *sx = -1;
+    }
+  }
 
-	if(yc == 0){
-		*T0y = T0[xc][yc+1][zc];
-		*tauy = tau[xc][yc+1][zc];
-		*sy = -1;
-	}else if(yc == n2-1){
-		*T0y = T0[xc][yc-1][zc];
-		*tauy = tau[xc][yc-1][zc];
-		*sy = 1;
-	}else{
-		if((tau[xc][yc-1][zc]*T0[xc][yc-1][zc]) < (tau[xc][yc+1][zc]*T0[xc][yc+1][zc])){
-			*T0y = T0[xc][yc-1][zc];
-			*tauy = tau[xc][yc-1][zc];
-			*sy = 1;
-		}else{
-			*T0y = T0[xc][yc+1][zc];
-			*tauy = tau[xc][yc+1][zc];
-			*sy = -1;
-		}
-	}
+  if(yc == 0){
+    *T0y = T0[xc][yc+1][zc];
+    *tauy = tau[xc][yc+1][zc];
+    *sy = -1;
+  }else if(yc == n2-1){
+    *T0y = T0[xc][yc-1][zc];
+    *tauy = tau[xc][yc-1][zc];
+    *sy = 1;
+  }else{
+    if((tau[xc][yc-1][zc]*T0[xc][yc-1][zc]) < (tau[xc][yc+1][zc]*T0[xc][yc+1][zc])){
+      *T0y = T0[xc][yc-1][zc];
+      *tauy = tau[xc][yc-1][zc];
+      *sy = 1;
+    }else{
+      *T0y = T0[xc][yc+1][zc];
+      *tauy = tau[xc][yc+1][zc];
+      *sy = -1;
+    }
+  }
 
-	if(zc == 0){
-		*T0z = T0[xc][yc][zc+1];
-		*tauz = tau[xc][yc][zc+1];
-		*sz = -1;
-	}else if(zc == n3-1){
-		*T0z = T0[xc][yc][zc-1];
-		*tauz = tau[xc][yc][zc-1];
-		*sz = 1;
-	}else{
-		if((tau[xc][yc][zc-1]*T0[xc][yc][zc-1]) < (tau[xc][yc][zc+1]*T0[xc][yc][zc+1])){
-			*T0z = T0[xc][yc][zc-1];
-			*tauz = tau[xc][yc][zc-1];
-			*sz = 1;
-		}else{
-			*T0z = T0[xc][yc][zc+1];
-			*tauz = tau[xc][yc][zc+1];
-			*sz = -1;
-		}
-	}
+  if(zc == 0){
+    *T0z = T0[xc][yc][zc+1];
+    *tauz = tau[xc][yc][zc+1];
+    *sz = -1;
+  }else if(zc == n3-1){
+    *T0z = T0[xc][yc][zc-1];
+    *tauz = tau[xc][yc][zc-1];
+    *sz = 1;
+  }else{
+    if((tau[xc][yc][zc-1]*T0[xc][yc][zc-1]) < (tau[xc][yc][zc+1]*T0[xc][yc][zc+1])){
+      *T0z = T0[xc][yc][zc-1];
+      *tauz = tau[xc][yc][zc-1];
+      *sz = 1;
+    }else{
+      *T0z = T0[xc][yc][zc+1];
+      *tauz = tau[xc][yc][zc+1];
+      *sz = -1;
+    }
+  }
 
 
 }
 
 bool is_Causal_root_2D(float root, float taux, float tauy, float h1, float h2, float px0c, float py0c, int sx, int sy, float T0c){
-	float a = T0c*(root-taux)/h1 + px0c*root*sx;
-	float b = T0c*(root-tauy)/h2 + py0c*root*sy;
-	if(a>0 && b>0) return true;
-	else return false;
+  float a = T0c*(root-taux)/h1 + px0c*root*sx;
+  float b = T0c*(root-tauy)/h2 + py0c*root*sy;
+  if(a>0 && b>0) return true;
+  else return false;
 }
 
 bool is_Causal_root_3D(float root, float taux, float tauy, float tauz, float h1, float h2, float h3, float px0c, float py0c, float pz0c, int sx, int sy, int sz, float T0c){
-	float a = T0c*(root-taux)/h1 + px0c*root*sx;
-	float b = T0c*(root-tauy)/h2 + py0c*root*sy;
-	float c = T0c*(root-tauz)/h3 + pz0c*root*sz;
-	if(a>0 && b>0 && c>0) return true;
-	else return false;
+  float a = T0c*(root-taux)/h1 + px0c*root*sx;
+  float b = T0c*(root-tauy)/h2 + py0c*root*sy;
+  float c = T0c*(root-tauz)/h3 + pz0c*root*sz;
+  if(a>0 && b>0 && c>0) return true;
+  else return false;
 }
 
 
 float trisolver_xy(float Vnmoc, float V0c, float etac, float T0c, float px0c, float py0c, float pz0c, float rhsc,
-		float taux, float tauy, float tauz, float T0x, float T0y, float T0z, int sx, int sy, int sz){
-	float Vnmoc2 = Vnmoc*Vnmoc, V0c2 = V0c*V0c, T0c2 = T0c*T0c;
-	float px0c2 = px0c*px0c, py0c2 = py0c*py0c, pz0c2 = pz0c*pz0c;
-	float taucx = (T0c*taux + h1*sqrt(rhsc/(Vnmoc2*(1+2*etac))))/(T0c + h1*fabs(px0c));
-	float taucy = (T0c*tauy + h2*sqrt(rhsc/(Vnmoc2*(1+2*etac))))/(T0c + h2*fabs(py0c));
-	if(taux == HUGE) return taucy;
-	else if(tauy == HUGE) return taucx;
-	else{
-		float* root = alloc1float(2);
-		float result = HUGE;
-		int nd = 0, flag = 1;
-		float a = Vnmoc2*(1+2*etac)*( T0c2/(h1*h1) + px0c2 +2*sx*T0c*px0c/h1 )
-			+ Vnmoc2*(1+2*etac)*( T0c2/(h2*h2) + py0c2 +2*sy*T0c*py0c/h2 );
-		float b = -2*Vnmoc2*(1+2*etac)*taux*( T0c2/(h1*h1) +sx*T0c*px0c/h1 )
-			-2*Vnmoc2*(1+2*etac)*tauy*( T0c2/(h2*h2) +sy*T0c*py0c/h2 );
-		float c = Vnmoc2*(1+2*etac)*taux*taux*T0c2/(h1*h1) + Vnmoc2*(1+2*etac)*tauy*tauy*T0c2/(h2*h2) - rhsc;
-		Polynomial2rootsolver(b/a, c/a, root, &nd);
-		for(int i=0; i<nd; i++){
-			if(is_Causal_root_2D(root[i], taux, tauy, h1, h2, px0c, py0c, sx, sy, T0c)){
-				flag = 0;
-				result = fmin(result, root[i]);
-			}
-		}
-		free1float(root);
-		if(flag) result = fmin(taucx,taucy);
-		return result;
-	}
+		   float taux, float tauy, float tauz, float T0x, float T0y, float T0z, int sx, int sy, int sz){
+  float Vnmoc2 = Vnmoc*Vnmoc, V0c2 = V0c*V0c, T0c2 = T0c*T0c;
+  float px0c2 = px0c*px0c, py0c2 = py0c*py0c, pz0c2 = pz0c*pz0c;
+  float taucx = (T0c*taux + h1*sqrt(rhsc/(Vnmoc2*(1+2*etac))))/(T0c + h1*fabs(px0c));
+  float taucy = (T0c*tauy + h2*sqrt(rhsc/(Vnmoc2*(1+2*etac))))/(T0c + h2*fabs(py0c));
+  if(taux == HUGE) return taucy;
+  if(tauy == HUGE) return taucx;
+
+  float root[2];
+  float result = HUGE;
+  int nd = 0, flag = 1;
+  float a = Vnmoc2*(1+2*etac)*( T0c2/(h1*h1) + px0c2 +2*sx*T0c*px0c/h1 )
+    + Vnmoc2*(1+2*etac)*( T0c2/(h2*h2) + py0c2 +2*sy*T0c*py0c/h2 );
+  float b = -2*Vnmoc2*(1+2*etac)*taux*( T0c2/(h1*h1) +sx*T0c*px0c/h1 )
+    -2*Vnmoc2*(1+2*etac)*tauy*( T0c2/(h2*h2) +sy*T0c*py0c/h2 );
+  float c = Vnmoc2*(1+2*etac)*taux*taux*T0c2/(h1*h1) + Vnmoc2*(1+2*etac)*tauy*tauy*T0c2/(h2*h2) - rhsc;
+  Polynomial2rootsolver(b/a, c/a, root, &nd);
+  for(int i=0; i<nd; i++){
+    if(is_Causal_root_2D(root[i], taux, tauy, h1, h2, px0c, py0c, sx, sy, T0c)){
+      flag = 0;
+      result = fmin(result, root[i]);
+    }
+  }
+  if(flag) result = fmin(taucx,taucy);
+
+  return result;
 }
 
 float trisolver_xz(float Vnmoc, float V0c, float etac, float T0c, float px0c, float py0c, float pz0c, float rhsc,
-		float taux, float tauy, float tauz, float T0x, float T0y, float T0z, int sx, int sy, int sz){
-	float Vnmoc2 = Vnmoc*Vnmoc, V0c2 = V0c*V0c, T0c2 = T0c*T0c;
-	float px0c2 = px0c*px0c, py0c2 = py0c*py0c, pz0c2 = pz0c*pz0c;
-	float taucx = (T0c*taux + h1*sqrt(rhsc/(Vnmoc2*(1+2*etac))))/(T0c + h1*fabs(px0c));
-	float taucz = (T0c*tauz + h3*sqrt(rhsc/V0c2))/(T0c + h3*fabs(pz0c));
-	if(taux == HUGE) return taucz;
-	else if(tauz == HUGE) return taucx;
-	else{
-		float* root = alloc1float(2);
-		float result = HUGE;
-		int nd = 0, flag = 1;
-		float a = Vnmoc2*(1+2*etac)*( T0c2/(h1*h1) + px0c2 +2*sx*T0c*px0c/h1 )
-			+ V0c2*( T0c2/(h3*h3) + pz0c2 + 2*sz*T0c*pz0c/h3 );
-		float b = -2*Vnmoc2*(1+2*etac)*taux*( T0c2/(h1*h1) +sx*T0c*px0c/h1 )
-			-2*V0c2*tauz*( T0c2/(h3*h3) + sz*T0c*pz0c/h3 );
-		float c = Vnmoc2*(1+2*etac)*taux*taux*T0c2/(h1*h1) + V0c2*tauz*tauz*T0c2/(h3*h3) - rhsc;
-		Polynomial2rootsolver(b/a, c/a, root, &nd);
-		for(int i=0; i<nd; i++){
-			if(is_Causal_root_2D(root[i], taux, tauz, h1, h3, px0c, pz0c, sx, sz, T0c)){
-				flag = 0;
-				result = fmin(result, root[i]);
-			}
-		}
-		free1float(root);
-		if(flag) result = fmin(taucx,taucz);
-		return result;
-	}
+		   float taux, float tauy, float tauz, float T0x, float T0y, float T0z, int sx, int sy, int sz){
+  float Vnmoc2 = Vnmoc*Vnmoc, V0c2 = V0c*V0c, T0c2 = T0c*T0c;
+  float px0c2 = px0c*px0c, py0c2 = py0c*py0c, pz0c2 = pz0c*pz0c;
+  float taucx = (T0c*taux + h1*sqrt(rhsc/(Vnmoc2*(1+2*etac))))/(T0c + h1*fabs(px0c));
+  float taucz = (T0c*tauz + h3*sqrt(rhsc/V0c2))/(T0c + h3*fabs(pz0c));
+  if(taux == HUGE) return taucz;
+  if(tauz == HUGE) return taucx;
+
+  float root[2];
+  float result = HUGE;
+  int nd = 0, flag = 1;
+  float a = Vnmoc2*(1+2*etac)*( T0c2/(h1*h1) + px0c2 +2*sx*T0c*px0c/h1 )
+    + V0c2*( T0c2/(h3*h3) + pz0c2 + 2*sz*T0c*pz0c/h3 );
+  float b = -2*Vnmoc2*(1+2*etac)*taux*( T0c2/(h1*h1) +sx*T0c*px0c/h1 )
+    -2*V0c2*tauz*( T0c2/(h3*h3) + sz*T0c*pz0c/h3 );
+  float c = Vnmoc2*(1+2*etac)*taux*taux*T0c2/(h1*h1) + V0c2*tauz*tauz*T0c2/(h3*h3) - rhsc;
+  Polynomial2rootsolver(b/a, c/a, root, &nd);
+  for(int i=0; i<nd; i++){
+    if(is_Causal_root_2D(root[i], taux, tauz, h1, h3, px0c, pz0c, sx, sz, T0c)){
+      flag = 0;
+      result = fmin(result, root[i]);
+    }
+  }
+  if(flag) result = fmin(taucx,taucz);
+
+  return result;
 }
 
 float trisolver_yz(float Vnmoc, float V0c, float etac, float T0c, float px0c, float py0c, float pz0c, float rhsc,
-		float taux, float tauy, float tauz, float T0x, float T0y, float T0z, int sx, int sy, int sz){
-	float Vnmoc2 = Vnmoc*Vnmoc, V0c2 = V0c*V0c, T0c2 = T0c*T0c;
-	float px0c2 = px0c*px0c, py0c2 = py0c*py0c, pz0c2 = pz0c*pz0c;
-	float taucy = (T0c*tauy + h2*sqrt(rhsc/(Vnmoc2*(1+2*etac))))/(T0c + h2*fabs(py0c));
-	float taucz = (T0c*tauz + h3*sqrt(rhsc/V0c2))/(T0c + h3*fabs(pz0c));
-	if(tauy == HUGE) return taucz;
-	else if(tauz == HUGE) return taucy;
-	else{
-		float* root = alloc1float(2);
-		float result = HUGE;
-		int nd = 0, flag = 1;
-		float a = Vnmoc2*(1+2*etac)*( T0c2/(h2*h2) + py0c2 +2*sy*T0c*py0c/h2 )
-			+ V0c2*( T0c2/(h3*h3) + pz0c2 + 2*sz*T0c*pz0c/h3 );
-		float b = -2*Vnmoc2*(1+2*etac)*tauy*( T0c2/(h2*h2) +sy*T0c*py0c/h2 )
-			-2*V0c2*tauz*( T0c2/(h3*h3) + sz*T0c*pz0c/h3 );
-		float c = Vnmoc2*(1+2*etac)*tauy*tauy*T0c2/(h2*h2) + V0c2*tauz*tauz*T0c2/(h3*h3) - rhsc;
-		Polynomial2rootsolver(b/a, c/a, root, &nd);
-		for(int i=0; i<nd; i++){
-			if(is_Causal_root_2D(root[i], tauy, tauz, h2, h3, py0c, pz0c, sy, sz, T0c)){
-				flag = 0;
-				result = fmin(result, root[i]);
-			}
-		}
-		free1float(root);
-		if(flag) result = fmin(taucy,taucz);
-		return result;
-	}
+		   float taux, float tauy, float tauz, float T0x, float T0y, float T0z, int sx, int sy, int sz){
+  float Vnmoc2 = Vnmoc*Vnmoc, V0c2 = V0c*V0c, T0c2 = T0c*T0c;
+  float px0c2 = px0c*px0c, py0c2 = py0c*py0c, pz0c2 = pz0c*pz0c;
+  float taucy = (T0c*tauy + h2*sqrt(rhsc/(Vnmoc2*(1+2*etac))))/(T0c + h2*fabs(py0c));
+  float taucz = (T0c*tauz + h3*sqrt(rhsc/V0c2))/(T0c + h3*fabs(pz0c));
+  if(tauy == HUGE) return taucz;
+  if(tauz == HUGE) return taucy;
+
+  float root[2];
+  float result = HUGE;
+  int nd = 0, flag = 1;
+  float a = Vnmoc2*(1+2*etac)*( T0c2/(h2*h2) + py0c2 +2*sy*T0c*py0c/h2 )
+    + V0c2*( T0c2/(h3*h3) + pz0c2 + 2*sz*T0c*pz0c/h3 );
+  float b = -2*Vnmoc2*(1+2*etac)*tauy*( T0c2/(h2*h2) +sy*T0c*py0c/h2 )
+    -2*V0c2*tauz*( T0c2/(h3*h3) + sz*T0c*pz0c/h3 );
+  float c = Vnmoc2*(1+2*etac)*tauy*tauy*T0c2/(h2*h2) + V0c2*tauz*tauz*T0c2/(h3*h3) - rhsc;
+  Polynomial2rootsolver(b/a, c/a, root, &nd);
+  for(int i=0; i<nd; i++){
+    if(is_Causal_root_2D(root[i], tauy, tauz, h2, h3, py0c, pz0c, sy, sz, T0c)){
+      flag = 0;
+      result = fmin(result, root[i]);
+    }
+  }
+  if(flag) result = fmin(taucy,taucz);
+
+  return result;
 }
 
 
 void stencil_solver_3D(float*** Vnmo, float*** V0, float*** eta, float*** tau, float*** T0, float*** px0, float*** py0, float*** pz0, float*** rhs,
-		int xc, int yc, int zc, int* shotx, int* shoty, int* shotz){
-	float Vnmoc = Vnmo[xc][yc][zc], V0c = V0[xc][yc][zc], etac = eta[xc][yc][zc], rhsc = rhs[xc][yc][zc];
-	float T0c = T0[xc][yc][zc], px0c = px0[xc][yc][zc], py0c = py0[xc][yc][zc], pz0c = pz0[xc][yc][zc];
-        float Vnmoc2 = Vnmoc*Vnmoc, V0c2 = V0c*V0c, T0c2 = T0c*T0c;
-	float px0c2 = px0c*px0c, py0c2 = py0c*py0c,pz0c2 = pz0c*pz0c;
-	int sx, sy, sz;
-	float T0x, T0y, T0z, taux, tauy, tauz, tauc = HUGE;
+		       int xc, int yc, int zc, int* shotx, int* shoty, int* shotz){
+  float Vnmoc = Vnmo[xc][yc][zc], V0c = V0[xc][yc][zc], etac = eta[xc][yc][zc], rhsc = rhs[xc][yc][zc];
+  float T0c = T0[xc][yc][zc], px0c = px0[xc][yc][zc], py0c = py0[xc][yc][zc], pz0c = pz0[xc][yc][zc];
+  float Vnmoc2 = Vnmoc*Vnmoc, V0c2 = V0c*V0c, T0c2 = T0c*T0c;
+  float px0c2 = px0c*px0c, py0c2 = py0c*py0c,pz0c2 = pz0c*pz0c;
+  int sx, sy, sz;
+  float T0x, T0y, T0z, taux, tauy, tauz, tauc = HUGE;
 
-	for(int i=0; i<2; i++)
-		for(int j=0; j<2; j++)
-			for(int k=0; k<2; k++)
-				if((xc == shotx[i]) && yc == shoty[j] && zc == shotz[k]) return;
+  for(int i=0; i<2; i++)
+    for(int j=0; j<2; j++)
+      for(int k=0; k<2; k++)
+	if((xc == shotx[i]) && yc == shoty[j] && zc == shotz[k]) return;
 
-        find_upwind_stencil(tau, T0, xc, yc, zc, &T0x, &T0y, &T0z,
-	       &taux, &tauy, &tauz, &sx, &sy, &sz);
+  find_upwind_stencil(tau, T0, xc, yc, zc, &T0x, &T0y, &T0z,
+		      &taux, &tauy, &tauz, &sx, &sy, &sz);
 
-	if((taux == HUGE) && (tauy == HUGE) && (tauz == HUGE)) return;
+  if((taux == HUGE) && (tauy == HUGE) && (tauz == HUGE)) return;
 
-	if(taux == HUGE)
-		tauc = trisolver_yz(Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
-	else if(tauy == HUGE)
-		tauc = trisolver_xz(Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
-	else if(tauz == HUGE)
-		tauc = trisolver_xy(Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
-	else{
-		float* root = alloc1float(2);
-		int nd = 0, flag = 1;
-		float a = Vnmoc2*(1+2*etac)*( T0c2/(h1*h1) + px0c2 +2*sx*T0c*px0c/h1 )
-			+ Vnmoc2*(1+2*etac)*( T0c2/(h2*h2) + py0c2 +2*sy*T0c*py0c/h2 )
-			+ V0c2*( T0c2/(h3*h3) + pz0c2 + 2*sz*T0c*pz0c/h3 );
-		float b = -2*Vnmoc2*(1+2*etac)*taux*( T0c2/(h1*h1) +sx*T0c*px0c/h1 )
-			-2*Vnmoc2*(1+2*etac)*tauy*( T0c2/(h2*h2) +sy*T0c*py0c/h2 )
-			-2*V0c2*tauz*( T0c2/(h3*h3) + sz*T0c*pz0c/h3 );
-		float c = Vnmoc2*(1+2*etac)*taux*taux*T0c2/(h1*h1) + Vnmoc2*(1+2*etac)*tauy*tauy*T0c2/(h2*h2)
-		       + V0c2*tauz*tauz*T0c2/(h3*h3) - rhsc;
-		Polynomial2rootsolver(b/a, c/a, root, &nd);
-		for(int i=0; i<nd; i++){
-			if(is_Causal_root_3D(root[i], taux, tauy, tauz, h1, h2, h3, px0c, py0c, pz0c, sx, sy, sz, T0c)){
-				tauc = fmin(tauc,root[i]);
-				flag = 0;
-			}
-		}
-		free1float(root);
-		if(flag){
-			float r1,r2,r3;
-		        r1 = trisolver_yz(Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
-		        r2 = trisolver_xz(Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
-		        r3 = trisolver_xy(Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
-			tauc = fmin(r1, fmin(r2,r3));
-		}
-	}
-	tau[xc][yc][zc] = fmin(tau[xc][yc][zc], tauc);
+  if(taux == HUGE)
+    tauc = trisolver_yz(Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
+  else if(tauy == HUGE)
+    tauc = trisolver_xz(Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
+  else if(tauz == HUGE)
+    tauc = trisolver_xy(Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
+  else{
+    float* root = alloc1float(2);
+    int nd = 0, flag = 1;
+    float a = Vnmoc2*(1+2*etac)*( T0c2/(h1*h1) + px0c2 +2*sx*T0c*px0c/h1 )
+      + Vnmoc2*(1+2*etac)*( T0c2/(h2*h2) + py0c2 +2*sy*T0c*py0c/h2 )
+      + V0c2*( T0c2/(h3*h3) + pz0c2 + 2*sz*T0c*pz0c/h3 );
+    float b = -2*Vnmoc2*(1+2*etac)*taux*( T0c2/(h1*h1) +sx*T0c*px0c/h1 )
+      -2*Vnmoc2*(1+2*etac)*tauy*( T0c2/(h2*h2) +sy*T0c*py0c/h2 )
+      -2*V0c2*tauz*( T0c2/(h3*h3) + sz*T0c*pz0c/h3 );
+    float c = Vnmoc2*(1+2*etac)*taux*taux*T0c2/(h1*h1) + Vnmoc2*(1+2*etac)*tauy*tauy*T0c2/(h2*h2)
+      + V0c2*tauz*tauz*T0c2/(h3*h3) - rhsc;
+    Polynomial2rootsolver(b/a, c/a, root, &nd);
+    for(int i=0; i<nd; i++){
+      if(is_Causal_root_3D(root[i], taux, tauy, tauz, h1, h2, h3, px0c, py0c, pz0c, sx, sy, sz, T0c)){
+	tauc = fmin(tauc,root[i]);
+	flag = 0;
+      }
+    }
+    free1float(root);
+    if(flag){
+      float r1,r2,r3;
+      r1 = trisolver_yz(Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
+      r2 = trisolver_xz(Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
+      r3 = trisolver_xy(Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
+      tauc = fmin(r1, fmin(r2,r3));
+    }
+  }
+  tau[xc][yc][zc] = fmin(tau[xc][yc][zc], tauc);
 }
 
 void run_fast_sweep(float*** Vnmo, float*** V0, float*** eta, float*** tau, float*** T0, float*** px0, float*** py0, float*** pz0,
-	       	float*** rhs, int* shotx, int* shoty, int* shotz){
-	float*** arr = alloc3float(n3,n2,n1);
-	for(int iter=0; iter<niter; iter++){
-		printf("the %d th minor-cycle\n",iter+1);
-		for(int i=0; i<n1; i++)
-			for(int j=0; j<n2; j++)
-				for(int k=0; k<n3; k++)
-					arr[i][j][k] = tau[i][j][k];
-		for(int i=0; i<n1; i++)
-			for(int j=0; j<n2; j++)
-				for(int k=0; k<n3; k++)
-					stencil_solver_3D(Vnmo, V0, eta, tau, T0, px0, py0, pz0, rhs, i, j, k, shotx, shoty, shotz);
-                for(int i=0; i<n1; i++)
-			for(int j=n2-1; j>=0; j--)
-				for(int k=0; k<n3; k++)
-					stencil_solver_3D(Vnmo, V0, eta, tau, T0, px0, py0, pz0, rhs, i, j, k, shotx, shoty, shotz);
+		    float*** rhs, int* shotx, int* shoty, int* shotz)
+{
+  float maxval;
+  int i, j, k;
+  
+  float*** arr = alloc3float(n3,n2,n1);
+  for(int iter=0; iter<niter; iter++){
+    printf("the %d th minor-cycle\n",iter+1);
+    for(i=0; i<n1; i++)
+      for(j=0; j<n2; j++)
+	for(k=0; k<n3; k++)
+	  arr[i][j][k] = tau[i][j][k];
+    for(i=0; i<n1; i++)
+      for(j=0; j<n2; j++)
+	for(k=0; k<n3; k++)
+	  stencil_solver_3D(Vnmo, V0, eta, tau, T0, px0, py0, pz0, rhs, i, j, k, shotx, shoty, shotz);
+    for(i=0; i<n1; i++)
+      for(j=n2-1; j>=0; j--)
+	for(k=0; k<n3; k++)
+	  stencil_solver_3D(Vnmo, V0, eta, tau, T0, px0, py0, pz0, rhs, i, j, k, shotx, shoty, shotz);
 
-		for(int i=n1-1; i>=0; i--)
-			for(int j=n2-1; j>=0; j--)
-				for(int k=0; k<n3; k++)
-					stencil_solver_3D(Vnmo, V0, eta, tau, T0, px0, py0, pz0, rhs, i, j, k, shotx, shoty, shotz);
+    for(i=n1-1; i>=0; i--)
+      for(j=n2-1; j>=0; j--)
+	for(k=0; k<n3; k++)
+	  stencil_solver_3D(Vnmo, V0, eta, tau, T0, px0, py0, pz0, rhs, i, j, k, shotx, shoty, shotz);
 
-		for(int i=n1-1; i>=0; i--)
-			for(int j=0; j<n2; j++)
-				for(int k=0; k<n3; k++)
-					stencil_solver_3D(Vnmo, V0, eta, tau, T0, px0, py0, pz0, rhs, i, j, k, shotx, shoty, shotz);
+    for(i=n1-1; i>=0; i--)
+      for(j=0; j<n2; j++)
+	for(k=0; k<n3; k++)
+	  stencil_solver_3D(Vnmo, V0, eta, tau, T0, px0, py0, pz0, rhs, i, j, k, shotx, shoty, shotz);
 
-		for(int i=0; i<n1; i++)
-			for(int j=0; j<n2; j++)
-				for(int k=n3-1; k>=0; k--)
-					stencil_solver_3D(Vnmo, V0, eta, tau, T0, px0, py0, pz0, rhs, i, j, k, shotx, shoty, shotz);
-                for(int i=0; i<n1; i++)
-			for(int j=n2-1; j>=0; j--)
-				for(int k=n3-1; k>=0; k--)
-					stencil_solver_3D(Vnmo, V0, eta, tau, T0, px0, py0, pz0, rhs, i, j, k, shotx, shoty, shotz);
+    for(i=0; i<n1; i++)
+      for(j=0; j<n2; j++)
+	for(k=n3-1; k>=0; k--)
+	  stencil_solver_3D(Vnmo, V0, eta, tau, T0, px0, py0, pz0, rhs, i, j, k, shotx, shoty, shotz);
+    for(i=0; i<n1; i++)
+      for(j=n2-1; j>=0; j--)
+	for(k=n3-1; k>=0; k--)
+	  stencil_solver_3D(Vnmo, V0, eta, tau, T0, px0, py0, pz0, rhs, i, j, k, shotx, shoty, shotz);
 
-		for(int i=n1-1; i>=0; i--)
-			for(int j=n2-1; j>=0; j--)
-				for(int k=n3-1; k>=0; k--)
-					stencil_solver_3D(Vnmo, V0, eta, tau, T0, px0, py0, pz0, rhs, i, j, k, shotx, shoty, shotz);
+    for(i=n1-1; i>=0; i--)
+      for(j=n2-1; j>=0; j--)
+	for(k=n3-1; k>=0; k--)
+	  stencil_solver_3D(Vnmo, V0, eta, tau, T0, px0, py0, pz0, rhs, i, j, k, shotx, shoty, shotz);
 
-		for(int i=n1-1; i>=0; i--)
-			for(int j=0; j<n2; j++)
-				for(int k=n3-1; k>=0; k--)
-					stencil_solver_3D(Vnmo, V0, eta, tau, T0, px0, py0, pz0, rhs, i, j, k, shotx, shoty, shotz);
-		float MAX = 0;
-		for(int i=0; i<n1; i++)
-			for(int j=0; j<n2; j++)
-				for(int k=0; k<n3; k++)
-					MAX = fmax(MAX, fabs(arr[i][j][k]-tau[i][j][k]));
-		if(MAX<epsilon) break;
-	}
-	free3float(arr);
+    for(i=n1-1; i>=0; i--)
+      for(j=0; j<n2; j++)
+	for(k=n3-1; k>=0; k--)
+	  stencil_solver_3D(Vnmo, V0, eta, tau, T0, px0, py0, pz0, rhs, i, j, k, shotx, shoty, shotz);
+    maxval = 0;
+    for(i=0; i<n1; i++)
+      for(j=0; j<n2; j++)
+	for(k=0; k<n3; k++)
+	  maxval = fmax(maxval, fabs(arr[i][j][k]-tau[i][j][k]));
+    if(maxval<epsilon) break;
+  }
+  free3float(arr);
 }
 
 
-void eikonal_solver(float*** Vnmo, float*** V0, float*** eta, float*** T){
-	float*** T0 = alloc3float(n3,n2,n1);
-	float*** px0 = alloc3float(n3,n2,n1);
-	float*** py0 = alloc3float(n3,n2,n1);
-	float*** pz0 = alloc3float(n3,n2,n1);
-	float*** tau = alloc3float(n3,n2,n1);
-	float*** px = alloc3float(n3,n2,n1);
-	float*** py = alloc3float(n3,n2,n1);
-	float*** pz = alloc3float(n3,n2,n1);
-	float*** rhs = alloc3float(n3,n2,n1);
-	float*** arr = alloc3float(n3,n2,n1);
-	int* shotx = alloc1int(2);
-	int* shoty = alloc1int(2);
-	int* shotz = alloc1int(2);
+void eikonal_solver(float*** Vnmo, float*** V0, float*** eta, float*** T)
+{
+  float*** T0 = alloc3float(n3,n2,n1);
+  float*** px0 = alloc3float(n3,n2,n1);
+  float*** py0 = alloc3float(n3,n2,n1);
+  float*** pz0 = alloc3float(n3,n2,n1);
+  float*** tau = alloc3float(n3,n2,n1);
+  float*** px = alloc3float(n3,n2,n1);
+  float*** py = alloc3float(n3,n2,n1);
+  float*** pz = alloc3float(n3,n2,n1);
+  float*** rhs = alloc3float(n3,n2,n1);
+  float*** arr = alloc3float(n3,n2,n1);
+  int* shotx = alloc1int(2);
+  int* shoty = alloc1int(2);
+  int* shotz = alloc1int(2);
 
-	find_source_grid_index(shotx, shoty, shotz);
+  int i = (int)(x_source/h1);
+  int j = (int)(y_source/h2);
+  int k = (int)(z_source/h3);
 
-	// init rhs = 1
-	for(int i=0; i<n1; i++){
-		for(int j=0; j<n2; j++){
-			for(int k=0; k<n3; k++){
-				rhs[i][j][k] = 1.0;
-				T[i][j][k] = 0.0;
-			}
-		}
+  float maxval;
+  
+  shotx[0] = i; shotx[1] = i+1;
+  shoty[0] = j; shoty[1] = j+1;
+  shotz[0] = k; shotz[1] = k+1;
+
+
+  // init rhs = 1
+  for(i=0; i<n1; i++){
+    for(j=0; j<n2; j++){
+      for(k=0; k<n3; k++){
+	rhs[i][j][k] = 1.0;
+	T[i][j][k] = 0.0;
+      }
+    }
+  }
+
+  for(int loop=0; loop<nfpi; loop++){
+    printf("********the %d th major-cycle********\n",loop+1);
+    for(i=0; i<n1; i++)
+      for(j=0; j<n2; j++)
+	for(k=0; k<n3; k++)
+	  arr[i][j][k] = T[i][j][k];
+    // calculate T0 && grad((T0)
+    float Vnmos = Vnmo[shotx[0]][shoty[0]][shotz[0]], V0s = V0[shotx[0]][shoty[0]][shotz[0]], etas = eta[shotx[0]][shoty[0]][shotz[0]];
+    float Vnmos2 = Vnmos*Vnmos, V0s2 = V0s*V0s;
+    // float rhss = rhs[shotx[0]][shoty[0]][shotz[0]];
+    float rhss = 1.0;
+    float a0 = Vnmos2*(1+2*etas)/rhss, b0 = a0, c0 = V0s2/rhss;
+    for(i=0; i<n1; i++){
+      for(j=0; j<n2; j++){
+	for(k=0; k<n3; k++){
+	  float dx = i*h1-x_source;
+	  float dy = j*h2-y_source;
+	  float dz = k*h3-z_source;
+	  float temp = b0*c0*dx*dx+a0*c0*dy*dy+a0*b0*dz*dz;
+	  T0[i][j][k] = sqrt(temp/(a0*b0*c0));
+	  if(temp>1.0e-10){
+	    px0[i][j][k] = sqrt(b0*c0/a0)*dx/sqrt(temp);
+	    py0[i][j][k] = sqrt(a0*c0/b0)*dy/sqrt(temp);
+	    pz0[i][j][k] = sqrt(a0*b0/c0)*dz/sqrt(temp);
+	  }else{
+	    px0[i][j][k] = 0;
+	    py0[i][j][k] = 0;
+	    pz0[i][j][k] = 0;
+	  }
 	}
+      }
+    }
+    //initialize scaling factor tau: set tau=1 at source and HUGE everywhere else
+    for(i=0; i<n1; i++)
+      for(j=0; j<n2; j++)
+	for(k=0; k<n3; k++)
+	  tau[i][j][k] = HUGE;
+    for(i=0; i<2; i++)
+      for(j=0; j<2; j++)
+	for(k=0; k<2; k++)
+	  tau[shotx[i]][shoty[j]][shotz[k]] = 1.;
+    run_fast_sweep(Vnmo, V0, eta, tau, T0, px0, py0, pz0, rhs, shotx, shoty, shotz);
 
-	for(int loop=0; loop<nfpi; loop++){
-		printf("********the %d th major-cycle********\n",loop+1);
-		for(int i=0; i<n1; i++)
-			for(int j=0; j<n2; j++)
-				for(int k=0; k<n3; k++)
-					arr[i][j][k] = T[i][j][k];
-		// calculate T0 && grad((T0)
-		float Vnmos = Vnmo[shotx[0]][shoty[0]][shotz[0]], V0s = V0[shotx[0]][shoty[0]][shotz[0]], etas = eta[shotx[0]][shoty[0]][shotz[0]];
-		float Vnmos2 = Vnmos*Vnmos, V0s2 = V0s*V0s;
-	        // float rhss = rhs[shotx[0]][shoty[0]][shotz[0]];
-		float rhss = 1.0;
-		float a0 = Vnmos2*(1+2*etas)/rhss, b0 = a0, c0 = V0s2/rhss;
-		for(int i=0; i<n1; i++){
-			for(int j=0; j<n2; j++){
-				for(int k=0; k<n3; k++){
-					float dx = i*h1-x_source;
-					float dy = j*h2-y_source;
-					float dz = k*h3-z_source;
-					float temp = b0*c0*dx*dx+a0*c0*dy*dy+a0*b0*dz*dz;
-					T0[i][j][k] = sqrt(temp/(a0*b0*c0));
-					if(temp>1.0e-10){
-						px0[i][j][k] = sqrt(b0*c0/a0)*dx/sqrt(temp);
-						py0[i][j][k] = sqrt(a0*c0/b0)*dy/sqrt(temp);
-						pz0[i][j][k] = sqrt(a0*b0/c0)*dz/sqrt(temp);
-					}else{
-						px0[i][j][k] = 0;
-						py0[i][j][k] = 0;
-						pz0[i][j][k] = 0;
-					}
-				}
-			}
-		}
-		init(tau, shotx, shoty, shotz);
-		run_fast_sweep(Vnmo, V0, eta, tau, T0, px0, py0, pz0, rhs, shotx, shoty, shotz);
+    // calculate rhs && T
+    derivative_3D(tau, px, py, pz, h1, h2, h3, n1, n2, n3);
+    for(i=0; i<n1; i++){
+      for(j=0; j<n2; j++){
+	for(k=0; k<n3; k++){
+	  px[i][j][k] = px0[i][j][k]*tau[i][j][k] + px[i][j][k]*T0[i][j][k]; 
+	  py[i][j][k] = py0[i][j][k]*tau[i][j][k] + py[i][j][k]*T0[i][j][k]; 
+	  pz[i][j][k] = pz0[i][j][k]*tau[i][j][k] + pz[i][j][k]*T0[i][j][k];
+	  float Vnmoc = Vnmo[i][j][k], V0c = V0[i][j][k], etac = eta[i][j][k];
+	  float Vnmoc2 = Vnmoc*Vnmoc, V0c2 = V0c*V0c;
+	  float pzc = pz[i][j][k], pxc = px[i][j][k], pyc = py[i][j][k];
+	  rhs[i][j][k] = 1+2*etac*Vnmoc2*V0c2*pzc*pzc*(pxc*pxc+pyc*pyc);
+	  T[i][j][k] = T0[i][j][k]*tau[i][j][k];
+	}
+      }
+    }
+    maxval = 0.0;
+    for(i=0; i<n1; i++)
+      for(j=0; j<n2; j++)
+	for(k=0; k<n3; k++)
+	  maxval = fmax(maxval, fabs(arr[i][j][k]-T[i][j][k]));
+    if(maxval<epsilon) break;
 
-		// calculate rhs && T
-		derivative_3D(tau, px, py, pz, h1, h2, h3, n1, n2, n3);
-		for(int i=0; i<n1; i++){
-			for(int j=0; j<n2; j++){
-				for(int k=0; k<n3; k++){
-					px[i][j][k] = px0[i][j][k]*tau[i][j][k] + px[i][j][k]*T0[i][j][k]; 
-					py[i][j][k] = py0[i][j][k]*tau[i][j][k] + py[i][j][k]*T0[i][j][k]; 
-					pz[i][j][k] = pz0[i][j][k]*tau[i][j][k] + pz[i][j][k]*T0[i][j][k];
-					float Vnmoc = Vnmo[i][j][k], V0c = V0[i][j][k], etac = eta[i][j][k];
-					float Vnmoc2 = Vnmoc*Vnmoc, V0c2 = V0c*V0c;
-					float pzc = pz[i][j][k], pxc = px[i][j][k], pyc = py[i][j][k];
-					rhs[i][j][k] = 1+2*etac*Vnmoc2*V0c2*pzc*pzc*(pxc*pxc+pyc*pyc);
-					T[i][j][k] = T0[i][j][k]*tau[i][j][k];
-				}
-			}
-		}
-		float MAX = 0.0;
-		for(int i=0; i<n1; i++)
-			for(int j=0; j<n2; j++)
-				for(int k=0; k<n3; k++)
-					MAX = fmax(MAX, fabs(arr[i][j][k]-T[i][j][k]));
-		if(MAX<epsilon) break;
-
-	} 
-	free3float(T0);
-	free3float(px0);
-	free3float(py0);
-	free3float(pz0);
-	free3float(tau);
-	free3float(px);
-	free3float(py);
-	free3float(pz);
-	free3float(rhs);
-	free3float(arr);
-	free1int(shotx);
-	free1int(shoty);
-	free1int(shotz);
+  } 
+  free3float(T0);
+  free3float(px0);
+  free3float(py0);
+  free3float(pz0);
+  free3float(tau);
+  free3float(px);
+  free3float(py);
+  free3float(pz);
+  free3float(rhs);
+  free3float(arr);
+  free1int(shotx);
+  free1int(shoty);
+  free1int(shotz);
 }
