@@ -373,11 +373,10 @@ void eikonal_solver(eikonal_t *eik)
   eik->rhs = alloc3float(n3,n2,n1);
   arr = alloc3float(n3,n2,n1);
 
-  // init rhs = 1
   for(i=0; i<n1; i++){
     for(j=0; j<n2; j++){
       for(k=0; k<n3; k++){
-	eik->rhs[i][j][k] = 1.0;
+	eik->rhs[i][j][k] = 1.0;//initialize rhs=1.
 	eik->T[i][j][k] = 0.0;
       }
     }
