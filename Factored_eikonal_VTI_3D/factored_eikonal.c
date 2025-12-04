@@ -10,30 +10,30 @@ void compute_ray_parameters(float*** t, float*** dtdx, float*** dtdy, float*** d
   for(i=0; i<n1; i++){
     for(j=0; j<n2; j++){
       for(k=1; k<n3-1; k++){
-	dtdz[i][j][k] = (t[i][j][k+1]-t[i][j][k-1])/(2*h3);
+	dtdz[i][j][k] = (t[i][j][k+1]-t[i][j][k-1])/(2*h3);//1st derivative approximated by centered FD
       }
-      dtdz[i][j][0] = (-3*t[i][j][0]+4*t[i][j][1]-t[i][j][2])/(2*h3);
-      dtdz[i][j][n3-1] = (3*t[i][j][n3-3]-4*t[i][j][n3-2]+t[i][j][n3-1])/(2*h3);
+      dtdz[i][j][0] = (-3*t[i][j][0]+4*t[i][j][1]-t[i][j][2])/(2*h3);//1st derivative approximated by one-sided FD
+      dtdz[i][j][n3-1] = (3*t[i][j][n3-3]-4*t[i][j][n3-2]+t[i][j][n3-1])/(2*h3);//1st derivative approximated by one-sided FD
     }
   }
 
   for(i=0; i<n1; i++){
     for(k=0; k<n3; k++){
       for(j=1; j<n2-1; j++){
-	dtdy[i][j][k] = (t[i][j+1][k]-t[i][j-1][k])/(2*h2);
+	dtdy[i][j][k] = (t[i][j+1][k]-t[i][j-1][k])/(2*h2);//1st derivative approximated by centered FD
       }
-      dtdy[i][0][k] = (-3*t[i][0][k]+4*t[i][1][k]-t[i][2][k])/(2*h2);
-      dtdy[i][n2-1][k] = (3*t[i][n2-3][k]-4*t[i][n2-2][k]+t[i][n2-1][k])/(2*h2);
+      dtdy[i][0][k] = (-3*t[i][0][k]+4*t[i][1][k]-t[i][2][k])/(2*h2);//1st derivative approximated by one-sided FD
+      dtdy[i][n2-1][k] = (3*t[i][n2-3][k]-4*t[i][n2-2][k]+t[i][n2-1][k])/(2*h2);//1st derivative approximated by one-sided FD
     }
   }
 
   for(j=0; j<n2; j++){
     for(k=0; k<n3; k++){
       for(i=1; i<n1-1; i++){
-	dtdx[i][j][k] = (t[i+1][j][k]-t[i-1][j][k])/(2*h1);
+	dtdx[i][j][k] = (t[i+1][j][k]-t[i-1][j][k])/(2*h1);//1st derivative approximated by centered FD
       }
-      dtdx[0][j][k] = (-3*t[0][j][k]+4*t[1][j][k]-t[2][j][k])/(2*h1);
-      dtdx[n1-1][j][k] = (3*t[n1-3][j][k]-4*t[n1-2][j][k]+t[n1-1][j][k])/(2*h1);
+      dtdx[0][j][k] = (-3*t[0][j][k]+4*t[1][j][k]-t[2][j][k])/(2*h1);//1st derivative approximated by one-sided FD
+      dtdx[n1-1][j][k] = (3*t[n1-3][j][k]-4*t[n1-2][j][k]+t[n1-1][j][k])/(2*h1);//1st derivative approximated by one-sided FD
     }
   }
 }
