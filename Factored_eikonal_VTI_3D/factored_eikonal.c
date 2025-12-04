@@ -38,10 +38,10 @@ void compute_ray_parameters(float*** t, float*** dtdx, float*** dtdy, float*** d
   }
 }
 
-//solving 2nd order polynomial equation: x*x+q1*x+q0=0
+//compute roots of the 2nd order polynomial equation: x*x+q1*x+q0=0
 //root:only record the real root
 //nd:the number of real root
-void find_root_polynomial2(float q1,float q0,float* root,int* nd)
+void compute_roots(float q1,float q0,float* root,int* nd)
 {
   float delta = q1*q1-4*q0;
   root[0] = 0;
@@ -58,20 +58,21 @@ void find_root_polynomial2(float q1,float q0,float* root,int* nd)
   }
 }
 
-
-
-void find_upwind_stencil(eikonal_t *eik, int xc, int yc, int zc, float* T0x, float* T0y, float* T0z,
-			 float* taux, float* tauy, float* tauz, int* sx, int* sy, int* sz)
+//determine upwind stencil in x, y, z directions: compute T0x, T0y, T0z,  taux, tauy, tauz, sx, sy, sz 
+void determine_upwind_stencil(eikonal_t *eik, int xc, int yc, int zc,
+			      float* T0x, float* T0y, float* T0z,
+			      float* taux, float* tauy, float* tauz,
+			      int* sx, int* sy, int* sz)
 {
-  if(xc == 0){
+  if(xc == 0){//left boundary
     *T0x = eik->T0[xc+1][yc][zc];
     *taux = eik->tau[xc+1][yc][zc];
     *sx = -1;
-  }else if(xc == eik->n1-1){
+  }else if(xc == eik->n1-1){//right boundary
     *T0x = eik->T0[xc-1][yc][zc];
     *taux = eik->tau[xc-1][yc][zc];
     *sx = 1;
-  }else{
+  }else{//interior points, choose point with minimum travel time T=T0*tau
     if((eik->tau[xc-1][yc][zc]*eik->T0[xc-1][yc][zc]) < (eik->tau[xc+1][yc][zc]*eik->T0[xc+1][yc][zc])){
       *T0x = eik->T0[xc-1][yc][zc];
       *taux = eik->tau[xc-1][yc][zc];
@@ -83,15 +84,15 @@ void find_upwind_stencil(eikonal_t *eik, int xc, int yc, int zc, float* T0x, flo
     }
   }
 
-  if(yc == 0){
+  if(yc == 0){//front boundary
     *T0y = eik->T0[xc][yc+1][zc];
     *tauy = eik->tau[xc][yc+1][zc];
     *sy = -1;
-  }else if(yc == eik->n2-1){
+  }else if(yc == eik->n2-1){//rear boundary
     *T0y = eik->T0[xc][yc-1][zc];
     *tauy = eik->tau[xc][yc-1][zc];
     *sy = 1;
-  }else{
+  }else{//interior points, choose point with minimum travel time T=T0*tau
     if((eik->tau[xc][yc-1][zc]*eik->T0[xc][yc-1][zc]) < (eik->tau[xc][yc+1][zc]*eik->T0[xc][yc+1][zc])){
       *T0y = eik->T0[xc][yc-1][zc];
       *tauy = eik->tau[xc][yc-1][zc];
@@ -103,15 +104,15 @@ void find_upwind_stencil(eikonal_t *eik, int xc, int yc, int zc, float* T0x, flo
     }
   }
 
-  if(zc == 0){
+  if(zc == 0){//top boundary
     *T0z = eik->T0[xc][yc][zc+1];
     *tauz = eik->tau[xc][yc][zc+1];
     *sz = -1;
-  }else if(zc == eik->n3-1){
+  }else if(zc == eik->n3-1){//bottom boundary
     *T0z = eik->T0[xc][yc][zc-1];
     *tauz = eik->tau[xc][yc][zc-1];
     *sz = 1;
-  }else{
+  }else{//interior points, choose point with minimum travel time T=T0*tau
     if((eik->tau[xc][yc][zc-1]*eik->T0[xc][yc][zc-1]) < (eik->tau[xc][yc][zc+1]*eik->T0[xc][yc][zc+1])){
       *T0z = eik->T0[xc][yc][zc-1];
       *tauz = eik->tau[xc][yc][zc-1];
@@ -125,14 +126,18 @@ void find_upwind_stencil(eikonal_t *eik, int xc, int yc, int zc, float* T0x, flo
 
 }
 
-bool is_Causal_root_2D(float root, float taux, float tauy, float h1, float h2, float px0c, float py0c, int sx, int sy, float T0c){
+//determine whether causality condition is satisified, return true if it is, false otherwise
+bool is_Causal_root_2D(float root, float taux, float tauy, float h1, float h2, float px0c, float py0c, int sx, int sy, float T0c)
+{
   float a = T0c*(root-taux)/h1 + px0c*root*sx;
   float b = T0c*(root-tauy)/h2 + py0c*root*sy;
   if(a>0 && b>0) return true;
   else return false;
 }
 
-bool is_Causal_root_3D(float root, float taux, float tauy, float tauz, float h1, float h2, float h3, float px0c, float py0c, float pz0c, int sx, int sy, int sz, float T0c){
+//determine whether causality condition is satisified, return true if it is, false otherwise
+bool is_Causal_root_3D(float root, float taux, float tauy, float tauz, float h1, float h2, float h3, float px0c, float py0c, float pz0c, int sx, int sy, int sz, float T0c)
+{
   float a = T0c*(root-taux)/h1 + px0c*root*sx;
   float b = T0c*(root-tauy)/h2 + py0c*root*sy;
   float c = T0c*(root-tauz)/h3 + pz0c*root*sz;
@@ -142,7 +147,8 @@ bool is_Causal_root_3D(float root, float taux, float tauy, float tauz, float h1,
 
 
 float trisolver_xy(eikonal_t *eik, float Vnmoc, float V0c, float etac, float T0c, float px0c, float py0c, float pz0c, float rhsc,
-		   float taux, float tauy, float tauz, float T0x, float T0y, float T0z, int sx, int sy, int sz){
+		   float taux, float tauy, float tauz, float T0x, float T0y, float T0z, int sx, int sy, int sz)
+{
   float Vnmoc2 = Vnmoc*Vnmoc, V0c2 = V0c*V0c, T0c2 = T0c*T0c;
   float px0c2 = px0c*px0c, py0c2 = py0c*py0c, pz0c2 = pz0c*pz0c;
   float taucx = (T0c*taux + eik->h1*sqrt(rhsc/(Vnmoc2*(1+2*etac))))/(T0c + eik->h1*fabs(px0c));
@@ -158,7 +164,7 @@ float trisolver_xy(eikonal_t *eik, float Vnmoc, float V0c, float etac, float T0c
   float b = -2*Vnmoc2*(1+2*etac)*taux*( T0c2/(eik->h1*eik->h1) +sx*T0c*px0c/eik->h1 )
     -2*Vnmoc2*(1+2*etac)*tauy*( T0c2/(eik->h2*eik->h2) +sy*T0c*py0c/eik->h2 );
   float c = Vnmoc2*(1+2*etac)*taux*taux*T0c2/(eik->h1*eik->h1) + Vnmoc2*(1+2*etac)*tauy*tauy*T0c2/(eik->h2*eik->h2) - rhsc;
-  find_root_polynomial2(b/a, c/a, root, &nd);
+  compute_roots(b/a, c/a, root, &nd);
   for(int i=0; i<nd; i++){
     if(is_Causal_root_2D(root[i], taux, tauy, eik->h1, eik->h2, px0c, py0c, sx, sy, T0c)){
       flag = 0;
@@ -187,7 +193,7 @@ float trisolver_xz(eikonal_t *eik, float Vnmoc, float V0c, float etac, float T0c
   float b = -2*Vnmoc2*(1+2*etac)*taux*( T0c2/(eik->h1*eik->h1) +sx*T0c*px0c/eik->h1 )
     -2*V0c2*tauz*( T0c2/(eik->h3*eik->h3) + sz*T0c*pz0c/eik->h3 );
   float c = Vnmoc2*(1+2*etac)*taux*taux*T0c2/(eik->h1*eik->h1) + V0c2*tauz*tauz*T0c2/(eik->h3*eik->h3) - rhsc;
-  find_root_polynomial2(b/a, c/a, root, &nd);
+  compute_roots(b/a, c/a, root, &nd);
   for(int i=0; i<nd; i++){
     if(is_Causal_root_2D(root[i], taux, tauz, eik->h1, eik->h3, px0c, pz0c, sx, sz, T0c)){
       flag = 0;
@@ -216,7 +222,7 @@ float trisolver_yz(eikonal_t *eik, float Vnmoc, float V0c, float etac, float T0c
   float b = -2*Vnmoc2*(1+2*etac)*tauy*( T0c2/(eik->h2*eik->h2) +sy*T0c*py0c/eik->h2 )
     -2*V0c2*tauz*( T0c2/(eik->h3*eik->h3) + sz*T0c*pz0c/eik->h3 );
   float c = Vnmoc2*(1+2*etac)*tauy*tauy*T0c2/(eik->h2*eik->h2) + V0c2*tauz*tauz*T0c2/(eik->h3*eik->h3) - rhsc;
-  find_root_polynomial2(b/a, c/a, root, &nd);
+  compute_roots(b/a, c/a, root, &nd);
   for(int i=0; i<nd; i++){
     if(is_Causal_root_2D(root[i], tauy, tauz, eik->h2, eik->h3, py0c, pz0c, sy, sz, T0c)){
       flag = 0;
@@ -237,52 +243,58 @@ void stencil_solver_3D(eikonal_t *eik, int xc, int yc, int zc)
   float px0c2 = px0c*px0c, py0c2 = py0c*py0c,pz0c2 = pz0c*pz0c;
   int sx, sy, sz;
   float T0x, T0y, T0z, taux, tauy, tauz, tauc = HUGE;
-
-  for(int i=0; i<2; i++)
-    for(int j=0; j<2; j++)
-      for(int k=0; k<2; k++)
+  int i, j, k;
+  float r1,r2,r3;
+  float a, b, c;
+  float root[2];
+  
+  //no need to compute at source, we know traveltime=0, so we skip source locations
+  for(i=0; i<2; i++)
+    for(j=0; j<2; j++)
+      for(k=0; k<2; k++)
 	if((xc == eik->shotx[i]) && yc == eik->shoty[j] && zc == eik->shotz[k]) return;
 
-  find_upwind_stencil(eik, xc, yc, zc, &T0x, &T0y, &T0z,  &taux, &tauy, &tauz, &sx, &sy, &sz);
+  //determine upwind stencil in x, y, z directions: compute T0x, T0y, T0z,  taux, tauy, tauz, sx, sy, sz 
+  determine_upwind_stencil(eik, xc, yc, zc, &T0x, &T0y, &T0z,  &taux, &tauy, &tauz, &sx, &sy, &sz);
 
+  //skip if points are irrelevant to (xc,yc,zc), they are HUGE in all 3 directions (have not yet touched)
   if((taux == HUGE) && (tauy == HUGE) && (tauz == HUGE)) return;
 
-  if(taux == HUGE)
+  if(taux == HUGE)//tau needs to be updated via yz plane
     tauc = trisolver_yz(eik, Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
-  else if(tauy == HUGE)
+  else if(tauy == HUGE)//tau needs to be updated via xz plane
     tauc = trisolver_xz(eik, Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
-  else if(tauz == HUGE)
+  else if(tauz == HUGE)//tau needs to be updated via xy plane
     tauc = trisolver_xy(eik, Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
-  else{
-    float root[2];
+  else{//tau needs to be updated over a dipping plane across the FD cube
     int nd = 0, flag = 1;
-    float a = Vnmoc2*(1+2*etac)*( T0c2/(eik->h1*eik->h1) + px0c2 +2*sx*T0c*px0c/eik->h1 )
+    a = Vnmoc2*(1+2*etac)*( T0c2/(eik->h1*eik->h1) + px0c2 +2*sx*T0c*px0c/eik->h1 )
       + Vnmoc2*(1+2*etac)*( T0c2/(eik->h2*eik->h2) + py0c2 +2*sy*T0c*py0c/eik->h2 )
       + V0c2*( T0c2/(eik->h3*eik->h3) + pz0c2 + 2*sz*T0c*pz0c/eik->h3 );
-    float b = -2*Vnmoc2*(1+2*etac)*taux*( T0c2/(eik->h1*eik->h1) +sx*T0c*px0c/eik->h1 )
+    b = -2*Vnmoc2*(1+2*etac)*taux*( T0c2/(eik->h1*eik->h1) +sx*T0c*px0c/eik->h1 )
       -2*Vnmoc2*(1+2*etac)*tauy*( T0c2/(eik->h2*eik->h2) +sy*T0c*py0c/eik->h2 )
       -2*V0c2*tauz*( T0c2/(eik->h3*eik->h3) + sz*T0c*pz0c/eik->h3 );
-    float c = Vnmoc2*(1+2*etac)*taux*taux*T0c2/(eik->h1*eik->h1) + Vnmoc2*(1+2*etac)*tauy*tauy*T0c2/(eik->h2*eik->h2)
+    c = Vnmoc2*(1+2*etac)*taux*taux*T0c2/(eik->h1*eik->h1) + Vnmoc2*(1+2*etac)*tauy*tauy*T0c2/(eik->h2*eik->h2)
       + V0c2*tauz*tauz*T0c2/(eik->h3*eik->h3) - rhsc;
-    find_root_polynomial2(b/a, c/a, root, &nd);
-    for(int i=0; i<nd; i++){
+    compute_roots(b/a, c/a, root, &nd);
+    for(i=0; i<nd; i++){
       if(is_Causal_root_3D(root[i], taux, tauy, tauz, eik->h1, eik->h2, eik->h3, px0c, py0c, pz0c, sx, sy, sz, T0c)){
-	tauc = fmin(tauc,root[i]);
-	flag = 0;
+	tauc = fmin(tauc, root[i]);//pick minimum traveltime
+	flag = 0;//satisfy causality condition, take the above value and no further work
       }
     }
 
-    if(flag){
-      float r1,r2,r3;
+    if(flag){//all roots do not satisfy causality condition, take minimum traveltime from 3 different plane sweeping
       r1 = trisolver_yz(eik, Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
       r2 = trisolver_xz(eik, Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
       r3 = trisolver_xy(eik, Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
-      tauc = fmin(r1, fmin(r2,r3));
+      tauc = fmin(r1, fmin(r2,r3));//pick minimum traveltime
     }
   }
-  eik->tau[xc][yc][zc] = fmin(eik->tau[xc][yc][zc], tauc);
+  eik->tau[xc][yc][zc] = fmin(eik->tau[xc][yc][zc], tauc);//pick minimum traveltime
 }
 
+//run fast sweeping in 8 directions
 void fast_sweeping(eikonal_t *eik)
 {
   float maxval;
