@@ -237,8 +237,8 @@ float solve_triangle_yz(eikonal_t *eik, float Vnmoc, float V0c, float etac, floa
   return result;
 }
 
-//solve 3D problem centered at (xc,yc,zc)
-void stencil_solver_3d(eikonal_t *eik, int xc, int yc, int zc)
+//3D local solver at (xc,yc,zc)
+void local_solver_3d(eikonal_t *eik, int xc, int yc, int zc)
 {
   float Vnmoc = eik->Vnmo[xc][yc][zc], V0c = eik->V0[xc][yc][zc], etac = eik->eta[xc][yc][zc], rhsc = eik->rhs[xc][yc][zc];
   float T0c = eik->T0[xc][yc][zc], px0c = eik->px0[xc][yc][zc], py0c = eik->py0[xc][yc][zc], pz0c = eik->pz0[xc][yc][zc];
@@ -314,42 +314,42 @@ void fast_sweeping(eikonal_t *eik)
     for(i=0; i<n1; i++)
       for(j=0; j<n2; j++)
 	for(k=0; k<n3; k++)
-	  stencil_solver_3d(eik, i, j, k);
+	  local_solver_3d(eik, i, j, k);
 
     for(i=0; i<n1; i++)
       for(j=n2-1; j>=0; j--)
 	for(k=0; k<n3; k++)
-	  stencil_solver_3d(eik, i, j, k);
+	  local_solver_3d(eik, i, j, k);
 
     for(i=n1-1; i>=0; i--)
       for(j=n2-1; j>=0; j--)
 	for(k=0; k<n3; k++)
-	  stencil_solver_3d(eik, i, j, k);
+	  local_solver_3d(eik, i, j, k);
 
     for(i=n1-1; i>=0; i--)
       for(j=0; j<n2; j++)
 	for(k=0; k<n3; k++)
-	  stencil_solver_3d(eik, i, j, k);
+	  local_solver_3d(eik, i, j, k);
 
     for(i=0; i<n1; i++)
       for(j=0; j<n2; j++)
 	for(k=n3-1; k>=0; k--)
-	  stencil_solver_3d(eik, i, j, k);
+	  local_solver_3d(eik, i, j, k);
 
     for(i=0; i<n1; i++)
       for(j=n2-1; j>=0; j--)
 	for(k=n3-1; k>=0; k--)
-	  stencil_solver_3d(eik, i, j, k);
+	  local_solver_3d(eik, i, j, k);
 
     for(i=n1-1; i>=0; i--)
       for(j=n2-1; j>=0; j--)
 	for(k=n3-1; k>=0; k--)
-	  stencil_solver_3d(eik, i, j, k);
+	  local_solver_3d(eik, i, j, k);
 
     for(i=n1-1; i>=0; i--)
       for(j=0; j<n2; j++)
 	for(k=n3-1; k>=0; k--)
-	  stencil_solver_3d(eik, i, j, k);
+	  local_solver_3d(eik, i, j, k);
 
     maxval = 0;
     for(i=0; i<n1; i++)
