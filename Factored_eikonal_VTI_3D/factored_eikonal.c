@@ -145,8 +145,8 @@ bool is_Causal_root_3D(float root, float taux, float tauy, float tauz, float h1,
   else return false;
 }
 
-
-float trisolver_xy(eikonal_t *eik, float Vnmoc, float V0c, float etac, float T0c, float px0c, float py0c, float pz0c, float rhsc,
+//solve problem in a triangle over xy plane
+float solve_triangle_xy(eikonal_t *eik, float Vnmoc, float V0c, float etac, float T0c, float px0c, float py0c, float pz0c, float rhsc,
 		   float taux, float tauy, float tauz, float T0x, float T0y, float T0z, int sx, int sy, int sz)
 {
   float Vnmoc2 = Vnmoc*Vnmoc, V0c2 = V0c*V0c, T0c2 = T0c*T0c;
@@ -176,7 +176,8 @@ float trisolver_xy(eikonal_t *eik, float Vnmoc, float V0c, float etac, float T0c
   return result;
 }
 
-float trisolver_xz(eikonal_t *eik, float Vnmoc, float V0c, float etac, float T0c, float px0c, float py0c, float pz0c, float rhsc,
+//solve problem in a triangle over xz plane
+float solve_triangle_xz(eikonal_t *eik, float Vnmoc, float V0c, float etac, float T0c, float px0c, float py0c, float pz0c, float rhsc,
 		   float taux, float tauy, float tauz, float T0x, float T0y, float T0z, int sx, int sy, int sz){
   float Vnmoc2 = Vnmoc*Vnmoc, V0c2 = V0c*V0c, T0c2 = T0c*T0c;
   float px0c2 = px0c*px0c, py0c2 = py0c*py0c, pz0c2 = pz0c*pz0c;
@@ -205,7 +206,8 @@ float trisolver_xz(eikonal_t *eik, float Vnmoc, float V0c, float etac, float T0c
   return result;
 }
 
-float trisolver_yz(eikonal_t *eik, float Vnmoc, float V0c, float etac, float T0c, float px0c, float py0c, float pz0c, float rhsc,
+//solve problem in a triangle over yz plane
+float solve_triangle_yz(eikonal_t *eik, float Vnmoc, float V0c, float etac, float T0c, float px0c, float py0c, float pz0c, float rhsc,
 		   float taux, float tauy, float tauz, float T0x, float T0y, float T0z, int sx, int sy, int sz){
   float Vnmoc2 = Vnmoc*Vnmoc, V0c2 = V0c*V0c, T0c2 = T0c*T0c;
   float px0c2 = px0c*px0c, py0c2 = py0c*py0c, pz0c2 = pz0c*pz0c;
@@ -261,11 +263,11 @@ void stencil_solver_3D(eikonal_t *eik, int xc, int yc, int zc)
   if((taux == HUGE) && (tauy == HUGE) && (tauz == HUGE)) return;
 
   if(taux == HUGE)//tau needs to be updated via yz plane
-    tauc = trisolver_yz(eik, Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
+    tauc = solve_triangle_yz(eik, Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
   else if(tauy == HUGE)//tau needs to be updated via xz plane
-    tauc = trisolver_xz(eik, Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
+    tauc = solve_triangle_xz(eik, Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
   else if(tauz == HUGE)//tau needs to be updated via xy plane
-    tauc = trisolver_xy(eik, Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
+    tauc = solve_triangle_xy(eik, Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
   else{//tau needs to be updated over a dipping plane across the FD cube
     int nd = 0, flag = 1;
     a = Vnmoc2*(1+2*etac)*( T0c2/(eik->h1*eik->h1) + px0c2 +2*sx*T0c*px0c/eik->h1 )
@@ -285,9 +287,9 @@ void stencil_solver_3D(eikonal_t *eik, int xc, int yc, int zc)
     }
 
     if(flag){//all roots do not satisfy causality condition, take minimum traveltime from 3 different plane sweeping
-      r1 = trisolver_yz(eik, Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
-      r2 = trisolver_xz(eik, Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
-      r3 = trisolver_xy(eik, Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
+      r1 = solve_triangle_yz(eik, Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
+      r2 = solve_triangle_xz(eik, Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
+      r3 = solve_triangle_xy(eik, Vnmoc, V0c, etac, T0c, px0c, py0c, pz0c, rhsc, taux, tauy, tauz, T0x, T0y, T0z, sx, sy, sz);
       tauc = fmin(r1, fmin(r2,r3));//pick minimum traveltime
     }
   }

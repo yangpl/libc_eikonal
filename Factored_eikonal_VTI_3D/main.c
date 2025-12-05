@@ -42,12 +42,10 @@ void main(int argc, char *argv[])
     }
   }
 	
-  clock_t start,end;
+  clock_t start, end;
   float CPU_time_used;
-  start=clock();
-	
-  eikonal_solver(eik);
-			
+  start=clock();	
+  eikonal_solver(eik);			
   end=clock();
   CPU_time_used=(float)(end-start)/CLOCKS_PER_SEC;
   printf("CPU_time_used=%f\n",CPU_time_used);
