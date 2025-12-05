@@ -3,6 +3,7 @@
 
 #define HUGE 1e10
 
+//compute ray parameters (slowness vector): px,py,pz=dtdx,dtdy,dtdz
 void compute_ray_parameters(float*** t, float*** dtdx, float*** dtdy, float*** dtdz, float h1, float h2, float h3, int n1, int n2, int n3)
 {
   int i, j, k;
@@ -236,7 +237,7 @@ float solve_triangle_yz(eikonal_t *eik, float Vnmoc, float V0c, float etac, floa
   return result;
 }
 
-
+//solve 3D problem centered at (xc,yc,zc)
 void stencil_solver_3d(eikonal_t *eik, int xc, int yc, int zc)
 {
   float Vnmoc = eik->Vnmo[xc][yc][zc], V0c = eik->V0[xc][yc][zc], etac = eik->eta[xc][yc][zc], rhsc = eik->rhs[xc][yc][zc];
@@ -372,10 +373,10 @@ void eikonal_solver(eikonal_t *eik)
   int i = (int)(eik->x_source/eik->h1);
   int j = (int)(eik->y_source/eik->h2);
   int k = (int)(eik->z_source/eik->h3);
-
   eik->shotx[0] = i; eik->shotx[1] = i+1;
   eik->shoty[0] = j; eik->shoty[1] = j+1;
   eik->shotz[0] = k; eik->shotz[1] = k+1;
+  
   eik->T0 = alloc3float(n3,n2,n1);
   eik->px0 = alloc3float(n3,n2,n1);
   eik->py0 = alloc3float(n3,n2,n1);
