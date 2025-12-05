@@ -127,20 +127,20 @@ void determine_upwind_stencil(eikonal_t *eik, int xc, int yc, int zc,
 }
 
 //determine whether causality condition is satisified, return true if it is, false otherwise
-bool is_Causal_root_2D(float root, float taux, float tauy, float h1, float h2, float px0c, float py0c, int sx, int sy, float T0c)
+bool is_causal_2d(float tau, float taux, float tauy, float h1, float h2, float px0c, float py0c, int sx, int sy, float T0c)
 {
-  float a = T0c*(root-taux)/h1 + px0c*root*sx;
-  float b = T0c*(root-tauy)/h2 + py0c*root*sy;
+  float a = T0c*(tau-taux)/h1 + px0c*tau*sx;
+  float b = T0c*(tau-tauy)/h2 + py0c*tau*sy;
   if(a>0 && b>0) return true;
   else return false;
 }
 
 //determine whether causality condition is satisified, return true if it is, false otherwise
-bool is_Causal_root_3D(float root, float taux, float tauy, float tauz, float h1, float h2, float h3, float px0c, float py0c, float pz0c, int sx, int sy, int sz, float T0c)
+bool is_causal_3d(float tau, float taux, float tauy, float tauz, float h1, float h2, float h3, float px0c, float py0c, float pz0c, int sx, int sy, int sz, float T0c)
 {
-  float a = T0c*(root-taux)/h1 + px0c*root*sx;
-  float b = T0c*(root-tauy)/h2 + py0c*root*sy;
-  float c = T0c*(root-tauz)/h3 + pz0c*root*sz;
+  float a = T0c*(tau-taux)/h1 + px0c*tau*sx;
+  float b = T0c*(tau-tauy)/h2 + py0c*tau*sy;
+  float c = T0c*(tau-tauz)/h3 + pz0c*tau*sz;
   if(a>0 && b>0 && c>0) return true;
   else return false;
 }
@@ -166,7 +166,7 @@ float solve_triangle_xy(eikonal_t *eik, float Vnmoc, float V0c, float etac, floa
   float c = Vnmoc2*(1+2*etac)*taux*taux*T0c2/(eik->h1*eik->h1) + Vnmoc2*(1+2*etac)*tauy*tauy*T0c2/(eik->h2*eik->h2) - rhsc;
   compute_roots(b/a, c/a, root, &nd);
   for(int i=0; i<nd; i++){
-    if(is_Causal_root_2D(root[i], taux, tauy, eik->h1, eik->h2, px0c, py0c, sx, sy, T0c)){
+    if(is_causal_2d(root[i], taux, tauy, eik->h1, eik->h2, px0c, py0c, sx, sy, T0c)){
       flag = 0;
       result = fmin(result, root[i]);
     }
@@ -196,7 +196,7 @@ float solve_triangle_xz(eikonal_t *eik, float Vnmoc, float V0c, float etac, floa
   float c = Vnmoc2*(1+2*etac)*taux*taux*T0c2/(eik->h1*eik->h1) + V0c2*tauz*tauz*T0c2/(eik->h3*eik->h3) - rhsc;
   compute_roots(b/a, c/a, root, &nd);
   for(int i=0; i<nd; i++){
-    if(is_Causal_root_2D(root[i], taux, tauz, eik->h1, eik->h3, px0c, pz0c, sx, sz, T0c)){
+    if(is_causal_2d(root[i], taux, tauz, eik->h1, eik->h3, px0c, pz0c, sx, sz, T0c)){
       flag = 0;
       result = fmin(result, root[i]);
     }
@@ -226,7 +226,7 @@ float solve_triangle_yz(eikonal_t *eik, float Vnmoc, float V0c, float etac, floa
   float c = Vnmoc2*(1+2*etac)*tauy*tauy*T0c2/(eik->h2*eik->h2) + V0c2*tauz*tauz*T0c2/(eik->h3*eik->h3) - rhsc;
   compute_roots(b/a, c/a, root, &nd);
   for(int i=0; i<nd; i++){
-    if(is_Causal_root_2D(root[i], tauy, tauz, eik->h2, eik->h3, py0c, pz0c, sy, sz, T0c)){
+    if(is_causal_2d(root[i], tauy, tauz, eik->h2, eik->h3, py0c, pz0c, sy, sz, T0c)){
       flag = 0;
       result = fmin(result, root[i]);
     }
@@ -237,7 +237,7 @@ float solve_triangle_yz(eikonal_t *eik, float Vnmoc, float V0c, float etac, floa
 }
 
 
-void stencil_solver_3D(eikonal_t *eik, int xc, int yc, int zc)
+void stencil_solver_3d(eikonal_t *eik, int xc, int yc, int zc)
 {
   float Vnmoc = eik->Vnmo[xc][yc][zc], V0c = eik->V0[xc][yc][zc], etac = eik->eta[xc][yc][zc], rhsc = eik->rhs[xc][yc][zc];
   float T0c = eik->T0[xc][yc][zc], px0c = eik->px0[xc][yc][zc], py0c = eik->py0[xc][yc][zc], pz0c = eik->pz0[xc][yc][zc];
@@ -280,7 +280,7 @@ void stencil_solver_3D(eikonal_t *eik, int xc, int yc, int zc)
       + V0c2*tauz*tauz*T0c2/(eik->h3*eik->h3) - rhsc;
     compute_roots(b/a, c/a, root, &nd);
     for(i=0; i<nd; i++){
-      if(is_Causal_root_3D(root[i], taux, tauy, tauz, eik->h1, eik->h2, eik->h3, px0c, py0c, pz0c, sx, sy, sz, T0c)){
+      if(is_causal_3d(root[i], taux, tauy, tauz, eik->h1, eik->h2, eik->h3, px0c, py0c, pz0c, sx, sy, sz, T0c)){
 	tauc = fmin(tauc, root[i]);//pick minimum traveltime
 	flag = 0;//satisfy causality condition, take the above value and no further work
       }
@@ -313,42 +313,42 @@ void fast_sweeping(eikonal_t *eik)
     for(i=0; i<n1; i++)
       for(j=0; j<n2; j++)
 	for(k=0; k<n3; k++)
-	  stencil_solver_3D(eik, i, j, k);
+	  stencil_solver_3d(eik, i, j, k);
 
     for(i=0; i<n1; i++)
       for(j=n2-1; j>=0; j--)
 	for(k=0; k<n3; k++)
-	  stencil_solver_3D(eik, i, j, k);
+	  stencil_solver_3d(eik, i, j, k);
 
     for(i=n1-1; i>=0; i--)
       for(j=n2-1; j>=0; j--)
 	for(k=0; k<n3; k++)
-	  stencil_solver_3D(eik, i, j, k);
+	  stencil_solver_3d(eik, i, j, k);
 
     for(i=n1-1; i>=0; i--)
       for(j=0; j<n2; j++)
 	for(k=0; k<n3; k++)
-	  stencil_solver_3D(eik, i, j, k);
+	  stencil_solver_3d(eik, i, j, k);
 
     for(i=0; i<n1; i++)
       for(j=0; j<n2; j++)
 	for(k=n3-1; k>=0; k--)
-	  stencil_solver_3D(eik, i, j, k);
+	  stencil_solver_3d(eik, i, j, k);
 
     for(i=0; i<n1; i++)
       for(j=n2-1; j>=0; j--)
 	for(k=n3-1; k>=0; k--)
-	  stencil_solver_3D(eik, i, j, k);
+	  stencil_solver_3d(eik, i, j, k);
 
     for(i=n1-1; i>=0; i--)
       for(j=n2-1; j>=0; j--)
 	for(k=n3-1; k>=0; k--)
-	  stencil_solver_3D(eik, i, j, k);
+	  stencil_solver_3d(eik, i, j, k);
 
     for(i=n1-1; i>=0; i--)
       for(j=0; j<n2; j++)
 	for(k=n3-1; k>=0; k--)
-	  stencil_solver_3D(eik, i, j, k);
+	  stencil_solver_3d(eik, i, j, k);
 
     maxval = 0;
     for(i=0; i<n1; i++)
