@@ -58,15 +58,20 @@ void get_velocity(eikonal_t *eik){
   }
 }
 
-void init_T0(eikonal_t *eik){
+void init_T0(eikonal_t *eik)
+{
+  int i, j, k;
+  float vel, dx, dy, dz, dist, pxc, pyc, pzc;
   int xc = (int)(eik->x_source/eik->h1);
   int yc = (int)(eik->y_source/eik->h2);
   int zc = (int)(eik->z_source/eik->h3);
-  float Vnmoc = eik->Vnmo[xc][yc][zc], V0c = eik->V0[xc][yc][zc], etac = eik->eta[xc][yc][zc];
-  float vel, dx, dy, dz, dist, pxc, pyc, pzc;
-  for(int i=0; i<eik->n1; i++){
-    for(int j=0; j<eik->n2; j++){
-      for(int k=0; k<eik->n3; k++){
+  float Vnmoc = eik->Vnmo[xc][yc][zc];
+  float V0c = eik->V0[xc][yc][zc];
+  float etac = eik->eta[xc][yc][zc];
+
+  for(i=0; i<eik->n1; i++){
+    for(j=0; j<eik->n2; j++){
+      for(k=0; k<eik->n3; k++){
 	dx = i*eik->h1 - eik->x_source;
 	dy = j*eik->h2 - eik->y_source;
 	dz = k*eik->h3 - eik->z_source;
@@ -81,19 +86,21 @@ void init_T0(eikonal_t *eik){
   }
 }
 
-void init_tau(eikonal_t *eik){
-  for(int i=0; i<eik->n1; i++)
-    for(int j=0; j<eik->n2; j++)
-      for(int k=0; k<eik->n3; k++)
+void init_tau(eikonal_t *eik)
+{
+  int i, j, k;
+  
+  for(i=0; i<eik->n1; i++)
+    for(j=0; j<eik->n2; j++)
+      for(k=0; k<eik->n3; k++)
 	eik->tau[i][j][k] = FAR_TIME;
 
   int xc = (int)(eik->x_source/eik->h1);
   int yc = (int)(eik->y_source/eik->h2);
   int zc = (int)(eik->z_source/eik->h3);
-  int num = 1;
-  for(int i=xc-num+1; i<=xc+num; i++)
-    for(int j=yc-num+1; j<=yc+num; j++)
-      for(int k=zc-num+1; k<=zc+num; k++)
+  for(i=xc; i<=xc+1; i++)
+    for(j=yc; j<=yc+1; j++)
+      for(k=zc; k<=zc+1; k++)
 	eik->tau[i][j][k] = 1.0;
 }
 
